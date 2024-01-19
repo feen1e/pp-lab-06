@@ -34,18 +34,16 @@ void RemoveTab(Towar *&Tab, unsigned int &Rozmiar);
 // Wypisanie elementow tablicy spelniajacych dany warunek
 void PrintCondition(Towar *Tab, unsigned int Rozmiar);
 
-// Zapisanie aktualnej tablicy do pliku
-void SaveToFile(Towar *&Tab, unsigned int Rozmiar);
-
 // Wczytanie nowej tablicy z pliku
 void LoadFromFile(Towar *&Tab, unsigned int &Rozmiar);
 
+// Zapisanie aktualnej tablicy do pliku
+void SaveToFile(Towar *&Tab, unsigned int Rozmiar);
+
 int main() {
     printf("Autor: Dominik Kaczmarek Pn/P 13:15\n");
-
     Towar (*Tab) = NULL;
     unsigned int Rozmiar = 0;
-
     int wybranaOpcja;
     do {
         printf("\n\n");
@@ -79,9 +77,7 @@ int main() {
             default: printf("Niepoprawna liczba.");
         }
     } while (wybranaOpcja != 9);
-
     free(Tab);
-
     return 0;
 }
 
@@ -108,7 +104,6 @@ void InitTab(Towar *&Tab, unsigned int &Rozmiar) {
     }
     Tab = (Towar*) calloc(Rozmiar,sizeof(Towar));
     printf("Tablica o rozmiarze %u zostala utworzona.\n", Rozmiar);
-
     printf("\nCzy chcesz zaczac wczytywac dane do tablicy? (T/N): ");
     fflush(stdin);
     scanf("%c", &Odpowiedz);
