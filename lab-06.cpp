@@ -2,9 +2,10 @@
 Autor: Dominik Kaczmarek
 Grupa: Pn/P 13:15
 Temat: Laboratorium 6, zadania 1, 2
-Data: 13.01.2024 r.
+Data: 19.01.2024 r.
 */
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,11 +34,8 @@ void RemoveTab(Towar *&Tab, unsigned int &Rozmiar);
 // Wypisanie elementow tablicy spelniajacych dany warunek
 void PrintCondition(Towar *Tab, unsigned int Rozmiar);
 
-// TODO zapis danych pamiętanych w tablicy dynamicznej do pliku dyskowego oraz
-//  wczytanie uprzednio zapisanych danych do nowej tablicy dynamicznej
-
 // Zapisanie aktualnej tablicy do pliku
-void SaveToFile(Towar *&Tab, unsigned int &Rozmiar);
+void SaveToFile(Towar *&Tab, unsigned int Rozmiar);
 
 // Wczytanie nowej tablicy z pliku
 void LoadFromFile(Towar *&Tab, unsigned int &Rozmiar);
@@ -48,7 +46,6 @@ int main() {
     Towar (*Tab) = NULL;
     unsigned int Rozmiar = 0;
 
-    // TODO menu
     int wybranaOpcja;
     do {
         printf("\n\n");
@@ -62,12 +59,14 @@ int main() {
         printf("|| *4* Wypisanie zawartosci tablicy                                      ||\n");
         printf("|| *5* Wypisanie zakupow spelniajacych dany warunek                      ||\n");
         printf("|| *6* Usuniecie tablicy                                                 ||\n");
-        printf("|| *7* Zakoncz dzialanie programu                                        ||\n");
+        printf("|| *7* Wczytanie danych z pliku                                          ||\n");
+        printf("|| *8* Zapisanie danych do pliku                                         ||\n");
+        printf("|| *9* Zakoncz dzialanie programu                                        ||\n");
         printf("=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=\n");
         printf("Wprowadz numer wybranej opcji: ");
         scanf("%i", &wybranaOpcja);
         system("cls");
-        fflush(stdin); // wyczyszczenie bufora klawiatury
+        fflush(stdin);
         switch (wybranaOpcja) {
             case 1: InitTab(Tab, Rozmiar); break;
             case 2: AddRecord(Tab, Rozmiar); break;
@@ -75,10 +74,13 @@ int main() {
             case 4: PrintTab(Tab, Rozmiar); break;
             case 5: PrintCondition(Tab, Rozmiar); break;
             case 6: RemoveTab(Tab, Rozmiar); break;
+            case 7: LoadFromFile(Tab, Rozmiar); break;
+            case 8: SaveToFile(Tab,Rozmiar); break;
             default: printf("Niepoprawna liczba.");
         }
-    } while (wybranaOpcja != 7);
+    } while (wybranaOpcja != 9);
 
+    free(Tab);
 
     return 0;
 }
@@ -86,10 +88,9 @@ int main() {
 void InitTab(Towar *&Tab, unsigned int &Rozmiar) {
     char Odpowiedz;
     if (Tab != NULL) {
-        printf("\nTablica zostala wczesniej utworzona.\n"
-               "Utworzenie nowej spowoduje suniecie wszystkich rekordow znajdujacych sie aktualnie w tablicy.\n"
+        printf("\nTablica juz istnieje.\n"
+               "Utworzenie nowej spowoduje usuniecie wszystkich rekordow znajdujacych sie aktualnie w tablicy.\n"
                "Czy chcesz utworzyc nowa tablice? (T/N): ");
-        fflush(stdin);
         scanf("%c", &Odpowiedz);
         if (Odpowiedz == 'T' || Odpowiedz == 't') {
             RemoveTab(Tab, Rozmiar);
@@ -106,7 +107,7 @@ void InitTab(Towar *&Tab, unsigned int &Rozmiar) {
         return;
     }
     Tab = (Towar*) calloc(Rozmiar,sizeof(Towar));
-    printf("\nTablica o rozmiarze %u zostala utworzona.\n", Rozmiar);
+    printf("Tablica o rozmiarze %u zostala utworzona.\n", Rozmiar);
 
     printf("\nCzy chcesz zaczac wczytywac dane do tablicy? (T/N): ");
     fflush(stdin);
@@ -121,13 +122,10 @@ void InitTab(Towar *&Tab, unsigned int &Rozmiar) {
     }
 }
 
-void PrintTab(Towar *Tab, unsigned int Rozmiar) {
+void PrintTab(Towar *Tab, const unsigned int Rozmiar) {
     if (Tab == NULL) {
         printf("Tablica nie zostala jeszcze utworzona.");
     }
-    /*else if (Rozmiar == 0) {
-        printf("W tablicy nie znajduja sie jeszcze zadne rekordy.");
-    }*/
     else {
         printf("\n\n");
         printf("  Lp.  |         Nazwa         |    Cena    |  Ilosc  |      Wartosc     \n");
@@ -137,7 +135,7 @@ void PrintTab(Towar *Tab, unsigned int Rozmiar) {
                 i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
         }
         printf("-------------------------------------------------------------------------\n");
-        printf("\n\n\n");
+        printf("\n\n");
     }
 }
 
@@ -145,26 +143,25 @@ void AddRecord(Towar *&Tab, unsigned &Rozmiar) {
     if (Tab == NULL) {
         printf("Tablica nie zostala jeszcze utworzona.");
     }
-    else {
+    else { // sprawdzanie czy w tablicy znajduje sie rekord do wypelnienia
         unsigned int pozycja;
-        //printf("%d\n", Rozmiar);
         for (pozycja = 0; pozycja < Rozmiar; pozycja++) {
             if (Tab[pozycja].nazwa[0] == '\0') {
-        //        printf("NULL! %d\n", pozycja);
                 break;
             }
         }
-        if (pozycja >= Rozmiar) {
-            //printf("Zmieniono pozycje");
+        if (pozycja == Rozmiar) { // jesli nie ma rekordu do wypelnienia
             Rozmiar += 1;
-            Tab = (Towar*) realloc(Tab,sizeof(Towar)*Rozmiar);
-            pozycja = Rozmiar - 1;
+            Tab = (Towar*) realloc(Tab,sizeof(Towar)*Rozmiar); // zwiekszenie rozmiaru tablicy
         }
-        printf("Podaj nazwe: ");
-        fgets(Tab[pozycja].nazwa, 20, stdin);
-        Tab[pozycja].nazwa[strlen(Tab[pozycja].nazwa)-1] = 0; // usuwa znak nowej linii \n
+        printf("Podaj nazwe (maksymalnie 20 znakow): ");
+        fgets(Tab[pozycja].nazwa, 21, stdin);
+        if (Tab[pozycja].nazwa[strlen(Tab[pozycja].nazwa)-1] == '\n') {
+            Tab[pozycja].nazwa[strlen(Tab[pozycja].nazwa)-1] = 0; // usuwa znak nowej linii \n
+        }
         if (Tab[pozycja].nazwa[0] >= 97 && Tab[pozycja].nazwa[0] <= 122) Tab[pozycja].nazwa[0] -= 32;
         printf("Podaj cene:");
+        fflush(stdin);
         scanf("%f", &Tab[pozycja].cena);
         printf("Podaj ilosc:");
         scanf("%d", &Tab[pozycja].ilosc);
@@ -178,18 +175,17 @@ void RemoveRecord(Towar *&Tab, unsigned &Rozmiar) {
     else {
         unsigned int pozycja;
         printf("Podaj numer rekordu do usuniecia: ");
-        scanf("%u", &pozycja);
-        while (pozycja > Rozmiar) {
-            printf("Podany rekord nie istnieje.\n");
-            printf("Podaj numer rekordu do usuniecia: ");
+        do {
             scanf("%u", &pozycja);
+            if (pozycja > Rozmiar) printf("Podany rekord nie istnieje. Wprowadz ponownie:");
         }
+        while (pozycja > Rozmiar);
         pozycja -= 1; // zmniejszenie o 1 aby pozycja byla zgodna z Lp. wyswietlana przez PrintTab
         for (pozycja; pozycja < Rozmiar; pozycja++) {
             Tab[pozycja] = Tab[pozycja+1];
         }
         Rozmiar -= 1;
-        Tab = (Towar*) realloc(Tab,sizeof(Towar)*Rozmiar);
+        Tab = (Towar*) realloc(Tab,sizeof(Towar)*Rozmiar); // zmniejszenie rozmiaru tablicy
         printf("Rekord zostal usuniety.");
     }
 }
@@ -206,7 +202,7 @@ void RemoveTab(Towar *&Tab, unsigned &Rozmiar) {
     }
 }
 
-void PrintCondition(Towar *Tab, unsigned Rozmiar) {
+void PrintCondition(Towar *Tab, const unsigned int Rozmiar) {
     if (Tab == NULL) {
         printf("Tablica nie zostala jeszcze utworzona.");
     }
@@ -258,14 +254,16 @@ void PrintCondition(Towar *Tab, unsigned Rozmiar) {
                 printf("Podaj nazwe rekordow do wypisania:");
                 char Nazwa[20];
                 fflush(stdin);
-                fgets(Nazwa, 20, stdin);
-                Nazwa[strlen(Nazwa)-1] = 0; // usuwa znak nowej linii \n
+                fgets(Nazwa, 21, stdin);
+                if (Nazwa[strlen(Nazwa)-1] == '\n') {
+                    Nazwa[strlen(Nazwa)-1] = 0; // usuwa znak nowej linii \n
+                }
                 if (Nazwa[0] >= 97 && Nazwa[0] <= 122) Nazwa[0] -= 32;
                 printf("\n\n");
                 printf("  Lp.  |         Nazwa         |    Cena    |  Ilosc  |      Wartosc     \n");
                 printf("-------------------------------------------------------------------------\n");
                 for (int i = 0; i < Rozmiar; i++) {
-                    if (strcmp(Tab[i].nazwa,Nazwa) == 0) {
+                    if (strcmp(Tab[i].nazwa, Nazwa) == 0) {
                         printf(" %5d | %-20s  | %10.2f | %7d | %16.2f \n",
                             i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
                     }
@@ -307,10 +305,11 @@ void PrintCondition(Towar *Tab, unsigned Rozmiar) {
                         printf(" %5d | %-20s  | %10.2f | %7d | %16.2f \n",
                             i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
                     }
-                    else if (Pole == 4 && Tab[i].cena*Tab[i].ilosc < Warunek) {
+                    else if (Pole == 4 && round(Tab[i].cena*Tab[i].ilosc * 100) / 100 < Warunek) {
                         printf(" %5d | %-20s  | %10.2f | %7d | %16.2f \n",
                             i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
-                    }
+                    } // round(Tab[i].cena*Tab[i].ilosc * 100) / 100 - zaokraglenie do 2 miejsc po przecinku
+                      // aby unikac bledow przy porownywaniu liczb zmiennoprzecinkowych
                 }
             }
             else if (Opcja == 2) {
@@ -323,7 +322,7 @@ void PrintCondition(Towar *Tab, unsigned Rozmiar) {
                         printf(" %5d | %-20s  | %10.2f | %7d | %16.2f \n",
                             i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
                     }
-                    else if (Pole == 4 && Tab[i].cena*Tab[i].ilosc <= Warunek) {
+                    else if (Pole == 4 && round(Tab[i].cena*Tab[i].ilosc * 100) / 100 <= Warunek) {
                         printf(" %5d | %-20s  | %10.2f | %7d | %16.2f \n",
                             i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
                     }
@@ -339,7 +338,7 @@ void PrintCondition(Towar *Tab, unsigned Rozmiar) {
                         printf(" %5d | %-20s  | %10.2f | %7d | %16.2f \n",
                             i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
                     }
-                    else if (Pole == 4 && Tab[i].cena*Tab[i].ilosc == Warunek) {
+                    else if (Pole == 4 && round(Tab[i].cena*Tab[i].ilosc * 100) / 100 == Warunek) {
                         printf(" %5d | %-20s  | %10.2f | %7d | %16.2f \n",
                             i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
                     }
@@ -355,7 +354,7 @@ void PrintCondition(Towar *Tab, unsigned Rozmiar) {
                         printf(" %5d | %-20s  | %10.2f | %7d | %16.2f \n",
                             i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
                     }
-                    else if (Pole == 4 && Tab[i].cena*Tab[i].ilosc >= Warunek) {
+                    else if (Pole == 4 && round(Tab[i].cena*Tab[i].ilosc * 100) / 100 >= Warunek) {
                         printf(" %5d | %-20s  | %10.2f | %7d | %16.2f \n",
                             i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
                     }
@@ -371,7 +370,7 @@ void PrintCondition(Towar *Tab, unsigned Rozmiar) {
                         printf(" %5d | %-20s  | %10.2f | %7d | %16.2f \n",
                             i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
                     }
-                    else if (Pole == 4 && Tab[i].cena*Tab[i].ilosc > Warunek) {
+                    else if (Pole == 4 && round(Tab[i].cena*Tab[i].ilosc * 100) / 100 > Warunek) {
                         printf(" %5d | %-20s  | %10.2f | %7d | %16.2f \n",
                             i+1, Tab[i].nazwa, Tab[i].cena, Tab[i].ilosc, Tab[i].cena*Tab[i].ilosc);
                     }
@@ -384,11 +383,97 @@ void PrintCondition(Towar *Tab, unsigned Rozmiar) {
     }
 }
 
-void SaveToFile(Towar *&Tab, unsigned &Rozmiar) {
-    // TODO
-}
-
 void LoadFromFile(Towar *&Tab, unsigned &Rozmiar) {
-    // TODO
+    if (Tab != NULL) {
+        printf("Aktualnie istnieje tablica z rekordami.\n"
+               "Wczytanie danych z pliku spowoduje usuniecie wszystkich danych znajdujacych sie aktualnie w tablicy.\n"
+               "Czy chcesz wczytac dane z pliku? (T/N): ");
+        char Odpowiedz;
+        fflush(stdin);
+        scanf("%c", &Odpowiedz);
+        if (Odpowiedz == 'T' || Odpowiedz == 't') {
+            RemoveTab(Tab, Rozmiar);
+        }
+        else {
+            printf("Aktualna tablica nie zostala usunieta.\n");
+            return;
+        }
+    }
+    char NameOfFile[500] = "\0";
+    printf("Plik powinien zawierac dane w formacie   nazwa;cena;ilosc\n"
+           "a kazdy rekord powinien konczyc sie znakiem nowej linii.\n"
+           "Nazwa powinna konczyc sie \".txt\".\n"
+           "Mozesz podac tez lokazlizacje w jakiej znajduje sie plik.\n"
+           "Podaj nazwe pliku tekstowego, z ktorego maja zostac wczytane dane:");
+    fflush(stdin);
+    fgets(NameOfFile, 500, stdin);
+    if (NameOfFile[strlen(NameOfFile)-1] == '\n') { // usuwanie znaku nowej linii \n
+        NameOfFile[strlen(NameOfFile)-1] = '\0';
+    }
+    if (NameOfFile[strlen(NameOfFile)-4] != '.' || // sprawdzanie czy nazwa pliku konczy sie .txt
+        NameOfFile[strlen(NameOfFile)-3] != 't' ||
+        NameOfFile[strlen(NameOfFile)-2] != 'x' ||
+        NameOfFile[strlen(NameOfFile)-1] != 't') {
+        printf("Niepoprawna nazwa pliku. Nazwa musi konczyc sie rozszerzeniem .txt");
+        return;
+    }
+    FILE *file = fopen(NameOfFile, "r");
+    if (file == NULL) {
+        printf("Wystapil blad podczas otwierania pliku.");
+        return;
+    }
+    Rozmiar = 0;
+    char c;
+    while ((c = fgetc(file)) != EOF) { // sprawdzanie liczby rekordow w pliku
+        if (c == '\n') Rozmiar++;
+    }
+    Tab = (Towar*) calloc(Rozmiar,sizeof(Towar)); // tworzenie tablicy o odpowiednim rozmiarze
+    rewind(file); // ustawienie wskaznika na poczatek pliku
+    for (int i = 0; i < Rozmiar; i++) {
+        if (fscanf(file, "%[^;];%f;%d\n", Tab[i].nazwa, &Tab[i].cena, &Tab[i].ilosc) != 3) {
+            printf("Niepoprawny format danych w pliku. Wczytywanie anulowane.");
+            free(Tab);
+            Tab = NULL;
+            Rozmiar = 0;
+            return;
+        }
+        if (Tab[i].nazwa[0] >= 97 && Tab[i].nazwa[0] <= 122) Tab[i].nazwa[0] -= 32;
+    }
+    printf("Pomyslnie wczytano dane z pliku.");
+    fclose(file);
 }
 
+void SaveToFile(Towar *&Tab, const unsigned int Rozmiar) {
+    if (Tab == NULL) {
+        printf("Tablica nie zostala jeszcze utworzona.");
+        return;
+    }
+    char NameOfFile[500] = "\0";
+    printf("Podaj nazwe jaka ma miec plik tekstowy. Nazwa powinna konczyc sie \".txt\".\n"
+           "Mozesz podac tez lokazlizacje w jakiej ma zostac zapisany plik:");
+    fflush(stdin);
+    fgets(NameOfFile, 500, stdin);
+    if (NameOfFile[strlen(NameOfFile)-1] == '\n') { // usuwanie znaku nowej linii \n
+        NameOfFile[strlen(NameOfFile)-1] = '\0';
+    }
+    if (NameOfFile[strlen(NameOfFile)-4] != '.' || // sprawdzanie czy nazwa pliku konczy sie .txt
+        NameOfFile[strlen(NameOfFile)-3] != 't' ||
+        NameOfFile[strlen(NameOfFile)-2] != 'x' ||
+        NameOfFile[strlen(NameOfFile)-1] != 't') {
+        printf("Niepoprawna nazwa pliku. Nazwa musi konczyc sie rozszerzeniem .txt");
+        return;
+        }
+    FILE *file = fopen(NameOfFile, "w");
+    if (file == NULL) {
+        printf("Wystapil blad podczas otwierania pliku.");
+    }
+    else {
+        for (int i = 0; i < Rozmiar; i++) {
+            fprintf(file, "%s;", Tab[i].nazwa);
+            fprintf(file, "%.2f;", Tab[i].cena);
+            fprintf(file, "%d\n", Tab[i].ilosc);
+        }
+    }
+    printf("Pomyslnie zapisano dane do pliku.");
+    fclose(file);
+}

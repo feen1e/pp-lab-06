@@ -1,0 +1,12 @@
+mleko;2.10;10
+makaron;1.99;9
+chleb;2.0;2
+baton;2.01;3
+czekolada;3.99;4
+Mleko;2.01;12
+sok;2.50;5
+mandarynki;4;2
+pomarancze;4.1;3
+cukierki;0.99;11
+mleko;1.99;5
+Chleb;4.20;1
